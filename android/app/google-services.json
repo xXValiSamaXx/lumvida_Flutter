@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "1052984801220",
+    "project_id": "preticor-b8c0d",
+    "storage_bucket": "preticor-b8c0d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1052984801220:android:1c3ac5f49bb9ef55665691",
+        "android_client_info": {
+          "package_name": "com.example.lumvida"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1052984801220-e12lbu366jt33n7sn5ni4tfkcp566lg5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtuBGMrc_UtmNzDxNM39t7HUbSRBqwrmg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1052984801220-e12lbu366jt33n7sn5ni4tfkcp566lg5.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1052984801220-bput4neguhinlti2rbejm9bv6kpdrkn6.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.lumvida"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
