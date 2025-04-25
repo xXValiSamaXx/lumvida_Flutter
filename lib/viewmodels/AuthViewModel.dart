@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../services/GoogleSignInService.dart';
+
 class AuthViewModel extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -94,41 +96,29 @@ class AuthViewModel extends ChangeNotifier {
 
 // Método autenticación con Google
   Future<bool> signInWithGoogle() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
     try {
-      // Paso 1: Forzar cierre de sesión previo
-      await _googleSignIn.signOut();
+      final User? user = await GoogleSignInService.signInWithGoogle();
 
-      // Paso 2: Autenticar con Google
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return false;
-
-      // Paso 3: Obtener tokens
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
-      // Paso 4: Crear credencial de Firebase
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      // Paso 5: Autenticar en Firebase
-      final UserCredential userCredential = await _auth.signInWithCredential(credential);
-      final User? user = userCredential.user;
-      if (user == null) throw Exception("Usuario de Firebase nulo");
-
-      // Paso 6: Crear/Actualizar usuario en Firestore
-      await _firestore.collection("usuarios").doc(user.uid).set({
-        "uid": user.uid,
-        "email": user.email,
-        "provider": "GOOGLE",
-        "createdAt": FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-
-      return true;
-    } catch (e, stack) {
-      print("‼️ Error crítico: $e\nStacktrace: $stack");
-      await _auth.signOut();
-      await _googleSignIn.signOut();
+      if (user != null) {
+        _user = user;
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        _isLoading = false;
+        _errorMessage = "No se pudo iniciar sesión con Google";
+        notifyListeners();
+        return false;
+      }
+    } catch (e) {
+      print("Error en signInWithGoogle: $e");
+      _isLoading = false;
+      _errorMessage = "Error técnico al iniciar sesión: ${e.toString()}";
+      notifyListeners();
       return false;
     }
   }

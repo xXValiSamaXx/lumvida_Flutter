@@ -3,6 +3,19 @@ allprojects {
         google()
         mavenCentral()
     }
+
+    // Añadir esta configuración para todos los subproyectos/módulos
+    subprojects {
+        afterEvaluate {project ->
+            if (project.hasProperty('android')) {
+                android {
+                    buildFeatures {
+                        buildConfig true
+                    }
+                }
+            }
+        }
+    }
 }
 
 rootProject.buildDir = "../build"

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:lumvida_app/screens/InicioScreen.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter/gestures.dart';
+import 'package:provider/provider.dart';
+
+import '../utils/constants.dart';
 import '../viewmodels/AuthViewModel.dart';
+import 'InicioScreen.dart';
 import 'RegisterScreen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -32,16 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.purple.shade900,
-              Colors.purple.shade800,
-            ],
-          ),
-        ),
+        decoration: backgroundDecoration,
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -52,13 +45,30 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    // Logo
+                    Center(
+                      child: Text(
+                        "LumVida",
+                        style: TextStyle(
+                          fontSize: 40,
+                          fontWeight: FontWeight.bold,
+                          color: kPrimaryColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+
+                    // Título
                     const Text(
                       'Iniciar Sesión',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                      style: kTitleStyle,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 10),
+
+                    const Text(
+                      'Ingresa tus datos para acceder',
+                      style: kSubtitleStyle,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 40),
@@ -67,27 +77,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextFormField(
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white,
                         labelText: 'Correo electrónico',
-                        labelStyle: const TextStyle(color: Colors.white70),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: const BorderSide(color: Colors.white54),
-                          borderRadius: BorderRadius.circular(8),
+                        labelStyle: TextStyle(color: Colors.grey.shade700),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: const BorderSide(color: Colors.white),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        errorBorder: OutlineInputBorder(
-                          borderSide: const BorderSide(color: Colors.redAccent),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        focusedErrorBorder: OutlineInputBorder(
-                          borderSide: const BorderSide(color: Colors.redAccent),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        prefixIcon: const Icon(Icons.email, color: Colors.white70),
+                        prefixIcon: const Icon(Icons.email, color: kPrimaryColor),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -105,31 +104,20 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextFormField(
                       controller: _passwordController,
                       obscureText: _obscurePassword,
-                      style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white,
                         labelText: 'Contraseña',
-                        labelStyle: const TextStyle(color: Colors.white70),
-                        enabledBorder: OutlineInputBorder(
-                          borderSide: const BorderSide(color: Colors.white54),
-                          borderRadius: BorderRadius.circular(8),
+                        labelStyle: TextStyle(color: Colors.grey.shade700),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide.none,
                         ),
-                        focusedBorder: OutlineInputBorder(
-                          borderSide: const BorderSide(color: Colors.white),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        errorBorder: OutlineInputBorder(
-                          borderSide: const BorderSide(color: Colors.redAccent),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        focusedErrorBorder: OutlineInputBorder(
-                          borderSide: const BorderSide(color: Colors.redAccent),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        prefixIcon: const Icon(Icons.lock, color: Colors.white70),
+                        prefixIcon: const Icon(Icons.lock, color: kPrimaryColor),
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                            color: Colors.white70,
+                            color: Colors.grey.shade600,
                           ),
                           onPressed: () {
                             setState(() {
@@ -150,13 +138,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                        onPressed: () {
-                          _showForgotPasswordDialog(context);
-                        },
-                        child: const Text(
-                          '¿Olvidaste tu contraseña?',
-                          style: TextStyle(color: Colors.white70),
+                        onPressed: () => _showForgotPasswordDialog(context),
+                        style: TextButton.styleFrom(
+                          foregroundColor: kPrimaryColor,
                         ),
+                        child: const Text('¿Olvidaste tu contraseña?'),
                       ),
                     ),
 
@@ -168,18 +154,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         padding: const EdgeInsets.all(10),
                         margin: const EdgeInsets.only(bottom: 16),
                         decoration: BoxDecoration(
-                          color: Colors.redAccent.withOpacity(0.2),
+                          color: Colors.red.shade100,
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           authViewModel.errorMessage!,
-                          style: const TextStyle(color: Colors.white),
+                          style: TextStyle(color: Colors.red.shade800),
                           textAlign: TextAlign.center,
                         ),
                       ),
 
                     // Botón de inicio de sesión
-                    ElevatedButton(
+                    ElevatedButton.icon(
                       onPressed: authViewModel.isLoading
                           ? null
                           : () async {
@@ -187,107 +173,102 @@ class _LoginScreenState extends State<LoginScreen> {
                           _handleEmailPasswordLogin(context);
                         }
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.purple.shade900,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
+                      style: kPrimaryButtonStyle,
+                      icon: const Icon(Icons.email),
+                      label: authViewModel.isLoading
+                          ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
                         ),
-                        minimumSize: const Size(double.infinity, 0),
-                      ),
-                      child: authViewModel.isLoading
-                          ? const CircularProgressIndicator()
+                      )
                           : const Text(
-                        'Iniciar sesión',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        'Iniciar sesión con Email',
+                        style: kButtonTextStyle,
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
 
                     // Separador
                     const Row(
                       children: [
                         Expanded(
-                          child: Divider(color: Colors.white54, thickness: 1),
+                          child: Divider(color: Colors.grey, thickness: 1),
                         ),
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 16),
                           child: Text(
                             'O',
-                            style: TextStyle(color: Colors.white70),
+                            style: TextStyle(color: Colors.grey),
                           ),
                         ),
                         Expanded(
-                          child: Divider(color: Colors.white54, thickness: 1),
+                          child: Divider(color: Colors.grey, thickness: 1),
                         ),
                       ],
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
 
                     // Botón de Google
                     OutlinedButton.icon(
-                      onPressed: (authViewModel.isLoading || _isProcessingGoogle)
+                      onPressed: _isProcessingGoogle
                           ? null
                           : () => _handleGoogleLogin(context),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(color: Colors.white),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        foregroundColor: kPrimaryColor,
+                        side: const BorderSide(color: kPrimaryColor),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
                       ),
                       icon: _isProcessingGoogle
                           ? const SizedBox(
-                        width: 24,
-                        height: 24,
+                        width: 20,
+                        height: 20,
                         child: CircularProgressIndicator(
+                          color: kPrimaryColor,
                           strokeWidth: 2,
-                          color: Colors.white,
                         ),
                       )
-                          : Image.network(
-                        'https://cdn-icons-png.flaticon.com/512/2991/2991148.png',
-                        width: 24,
-                        height: 24,
-                      ),
+                          : const Icon(Icons.g_mobiledata, size: 28),
                       label: const Text(
                         'Iniciar sesión con Google',
-                        style: TextStyle(fontSize: 16),
+                        style: kButtonTextStyle,
                       ),
                     ),
 
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 24),
 
                     // Registro
-                    RichText(
-                      textAlign: TextAlign.center,
-                      text: TextSpan(
-                        text: '¿No tienes una cuenta? ',
-                        style: const TextStyle(color: Colors.white70),
-                        children: [
-                          TextSpan(
-                            text: 'Regístrate',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                    Center(
+                      child: RichText(
+                        textAlign: TextAlign.center,
+                        text: TextSpan(
+                          text: '¿No tienes una cuenta? ',
+                          style: TextStyle(color: Colors.grey.shade700),
+                          children: [
+                            TextSpan(
+                              text: 'Regístrate',
+                              style: const TextStyle(
+                                color: kPrimaryColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              recognizer: TapGestureRecognizer()
+                                ..onTap = () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) => const RegisterScreen(),
+                                    ),
+                                  );
+                                },
                             ),
-                            recognizer: TapGestureRecognizer()
-                              ..onTap = () {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (context) => const RegisterScreen(),
-                                  ),
-                                );
-                              },
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ],
@@ -311,26 +292,30 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (success && mounted) {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const InicioScreen()), // Tu pantalla principal
+        MaterialPageRoute(builder: (context) => const InicioScreen()),
       );
     }
   }
 
   // Método para manejar el inicio de sesión con Google
   void _handleGoogleLogin(BuildContext context) async {
+    setState(() => _isProcessingGoogle = true);
+
     try {
-      setState(() => _isProcessingGoogle = true);
       final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
       final success = await authViewModel.signInWithGoogle();
 
       if (success && mounted) {
-        // Esperar 1 segundo para sincronización completa
-        await Future.delayed(const Duration(seconds: 1));
-        if (mounted) {
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const InicioScreen()),
-          );
-        }
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const InicioScreen()),
+        );
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authViewModel.errorMessage ?? "No se pudo iniciar sesión"),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -355,15 +340,19 @@ class _LoginScreenState extends State<LoginScreen> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Restablecer contraseña'),
+          title: const Text('Restablecer contraseña', style: TextStyle(color: kPrimaryColor)),
           content: Form(
             key: formKey,
             child: TextFormField(
               controller: emailController,
               keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Correo electrónico',
                 hintText: 'Ingrese su correo electrónico',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                prefixIcon: const Icon(Icons.email),
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -381,10 +370,13 @@ class _LoginScreenState extends State<LoginScreen> {
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text('Cancelar'),
+              child: const Text('Cancelar', style: TextStyle(color: kPrimaryColor)),
             ),
             ElevatedButton(
               onPressed: () => _handleForgotPassword(context, formKey, emailController),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: kPrimaryColor,
+              ),
               child: const Text('Enviar'),
             ),
           ],
