@@ -25,6 +25,11 @@ class AuthViewModel extends ChangeNotifier {
     });
   }
 
+  Future<void> checkAuthState() async {
+    _user = _auth.currentUser;
+    notifyListeners();
+  }
+
   // Iniciar sesión con email y contraseña
   Future<bool> signInWithEmailAndPassword(String email, String password) async {
     _isLoading = true;
@@ -87,116 +92,60 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-  // Iniciar sesión con Google
+// Método autenticación con Google
   Future<bool> signInWithGoogle() async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
     try {
-      // Iniciar el flujo de autenticación
+      // Paso 1: Forzar cierre de sesión previo
+      await _googleSignIn.signOut();
+
+      // Paso 2: Autenticar con Google
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) return false;
 
-      // Verificar si el usuario canceló
-      if (googleUser == null) {
-        _isLoading = false;
-        notifyListeners();
-        return false;
-      }
-
-      // Obtener detalles de autenticación
+      // Paso 3: Obtener tokens
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
-      // Crear credencial para Firebase
-      final credential = GoogleAuthProvider.credential(
+      // Paso 4: Crear credencial de Firebase
+      final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      // Iniciar sesión con la credencial
-      final userCredential = await _auth.signInWithCredential(credential);
+      // Paso 5: Autenticar en Firebase
+      final UserCredential userCredential = await _auth.signInWithCredential(credential);
+      final User? user = userCredential.user;
+      if (user == null) throw Exception("Usuario de Firebase nulo");
 
-      // Verificar si el usuario existe en Firestore
-      final userDoc = await _firestore.collection("usuarios").doc(userCredential.user!.uid).get();
+      // Paso 6: Crear/Actualizar usuario en Firestore
+      await _firestore.collection("usuarios").doc(user.uid).set({
+        "uid": user.uid,
+        "email": user.email,
+        "provider": "GOOGLE",
+        "createdAt": FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
 
-      if (!userDoc.exists) {
-        // Crear el perfil si no existe
-        await _firestore.collection("usuarios").doc(userCredential.user!.uid).set({
-          "uid": userCredential.user!.uid,
-          "email": userCredential.user!.email,
-          "nombre": userCredential.user!.displayName ?? "Usuario",
-          "telefono": "",
-          "provider": "GOOGLE",
-          "createdAt": Timestamp.now().millisecondsSinceEpoch
-        });
-      }
-
-      _isLoading = false;
-      notifyListeners();
       return true;
-    } catch (e) {
-      _isLoading = false;
-      _errorMessage = "Error al iniciar sesión con Google: ${e.toString()}";
-      notifyListeners();
-      return false;
-    }
-  }
-
-  // Método para manejar credenciales de Google después de obtenerlas
-  Future<bool> signInWithGoogleCredential({required String? accessToken, required String? idToken}) async {
-    if (accessToken == null || idToken == null) {
-      _errorMessage = "No se pudieron obtener las credenciales de Google";
-      notifyListeners();
-      return false;
-    }
-
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
-
-    try {
-      // Crear credencial
-      final credential = GoogleAuthProvider.credential(
-        accessToken: accessToken,
-        idToken: idToken,
-      );
-
-      // Iniciar sesión con la credencial
-      final userCredential = await _auth.signInWithCredential(credential);
-
-      // Verificar si el usuario existe en Firestore
-      final userDoc = await _firestore.collection("usuarios").doc(userCredential.user!.uid).get();
-
-      if (!userDoc.exists) {
-        // Crear el perfil si no existe
-        await _firestore.collection("usuarios").doc(userCredential.user!.uid).set({
-          "uid": userCredential.user!.uid,
-          "email": userCredential.user!.email,
-          "nombre": userCredential.user!.displayName ?? "Usuario",
-          "telefono": "",
-          "provider": "GOOGLE",
-          "createdAt": Timestamp.now().millisecondsSinceEpoch
-        });
-      }
-
-      _isLoading = false;
-      notifyListeners();
-      return true;
-    } catch (e) {
-      _isLoading = false;
-      _errorMessage = "Error al iniciar sesión con Google: ${e.toString()}";
-      notifyListeners();
+    } catch (e, stack) {
+      print("‼️ Error crítico: $e\nStacktrace: $stack");
+      await _auth.signOut();
+      await _googleSignIn.signOut();
       return false;
     }
   }
 
   // Actualizar el teléfono del usuario
-  Future<bool> updateUserPhone(User user, String phone) async {
+  Future<bool> updateUserPhone(String phone) async {
+    if (_user == null) {
+      _errorMessage = "No hay usuario autenticado";
+      notifyListeners();
+      return false;
+    }
+
     try {
       _isLoading = true;
       notifyListeners();
 
-      await _firestore.collection("usuarios").doc(user.uid).update({
+      await _firestore.collection("usuarios").doc(_user!.uid).update({
         "telefono": phone
       });
 
@@ -213,8 +162,20 @@ class AuthViewModel extends ChangeNotifier {
 
   // Cerrar sesión
   Future<void> signOut() async {
-    await _googleSignIn.signOut();
-    await _auth.signOut();
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      await _googleSignIn.signOut();
+      await _auth.signOut();
+
+      _isLoading = false;
+      notifyListeners();
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = "Error al cerrar sesión: ${e.toString()}";
+      notifyListeners();
+    }
   }
 
   // Restablecer contraseña

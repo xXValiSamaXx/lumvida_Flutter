@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
@@ -9,8 +10,6 @@ import 'screens/RegisterScreen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Inicializar Firebase con las opciones generadas
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -33,7 +32,17 @@ class MyApp extends StatelessWidget {
           visualDensity: VisualDensity.adaptivePlatformDensity,
           fontFamily: 'Roboto',
         ),
-        home: const InicioScreen(),
+        home: StreamBuilder<User?>(
+          stream: FirebaseAuth.instance.authStateChanges(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.active) {
+              return snapshot.hasData ? const InicioScreen() : const LoginScreen();
+            }
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          },
+        ),
         routes: {
           '/register': (context) => const RegisterScreen(),
           '/login': (context) => const LoginScreen(),

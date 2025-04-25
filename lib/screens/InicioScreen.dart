@@ -51,7 +51,9 @@ class InicioScreen extends StatelessWidget {
                 // Sección de bienvenida
                 Text(
                   authViewModel.isAuthenticated
-                      ? 'Bienvenido ${authViewModel.user?.email?.split('@').first ?? 'Usuario'}'
+                      ? 'Bienvenido ${authViewModel.user?.email
+                      ?.split('@')
+                      .first ?? 'Usuario'}'
                       : 'Bienvenido Invitado',
                   style: const TextStyle(
                     fontSize: 24,
@@ -221,16 +223,25 @@ class InicioScreen extends StatelessWidget {
               child: const Text('Cancelar'),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 // Cerrar sesión
                 final authViewModel = Provider.of<AuthViewModel>(
                   context,
                   listen: false,
                 );
-                authViewModel.signOut();
+                await authViewModel.signOut();
 
                 // Cerrar el diálogo
-                Navigator.of(context).pop();
+                if (context.mounted) {
+                  Navigator.of(context).pop();
+                  // Opcional: Actualiza la UI de alguna manera para mostrar el cambio
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Sesión cerrada correctamente'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,

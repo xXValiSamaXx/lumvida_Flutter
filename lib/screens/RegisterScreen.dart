@@ -373,8 +373,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       const SizedBox(height: 24),
 
       // Separador
-      Row(
-        children: const [
+      const Row(
+        children: [
           Expanded(
             child: Divider(color: Colors.white54, thickness: 1),
           ),
@@ -393,15 +393,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       const SizedBox(height: 24),
 
-      // Botón de Google
+// Botón de Google
       OutlinedButton.icon(
         onPressed: authViewModel.isLoading
             ? null
             : () async {
-          final success = await authViewModel.signInWithGoogle();
+          try {
+            final success = await authViewModel.signInWithGoogle();
 
-          if (success && mounted) {
-            Navigator.of(context).pop();
+            if (success && mounted) {
+              Navigator.of(context).pop();
+            }
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("Error: ${e.toString()}")),
+              );
+            }
           }
         },
         style: OutlinedButton.styleFrom(

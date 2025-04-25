@@ -12,15 +12,15 @@ dependencies:
     sdk: flutter
 
   # Firebase
-  firebase_core: ^2.15.1
-  firebase_auth: ^4.9.0
-  cloud_firestore: ^4.9.1
+  firebase_core: ^2.18.0
+  firebase_auth: ^4.12.0
+  cloud_firestore: ^4.13.0
 
   # Gestión de estado
   provider: ^6.0.5
 
   # Autenticación con Google - versión específica que evita problemas
-  google_sign_in: ^6.1.6
+  google_sign_in: ^6.1.0
 
   # UI
   cupertino_icons: ^1.0.5

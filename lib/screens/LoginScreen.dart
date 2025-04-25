@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:lumvida_app/screens/InicioScreen.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/gestures.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import '../viewmodels/AuthViewModel.dart';
 import 'RegisterScreen.dart';
 
@@ -18,7 +18,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isProcessingGoogle = false;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   @override
   void dispose() {
@@ -152,7 +151,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       alignment: Alignment.centerRight,
                       child: TextButton(
                         onPressed: () {
-                          _forgotPassword(context, authViewModel);
+                          _showForgotPasswordDialog(context);
                         },
                         child: const Text(
                           '¿Olvidaste tu contraseña?',
@@ -185,14 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ? null
                           : () async {
                         if (_formKey.currentState!.validate()) {
-                          final success = await authViewModel.signInWithEmailAndPassword(
-                            _emailController.text.trim(),
-                            _passwordController.text,
-                          );
-
-                          if (success && mounted) {
-                            Navigator.of(context).pop();
-                          }
+                          _handleEmailPasswordLogin(context);
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -218,8 +210,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 24),
 
                     // Separador
-                    Row(
-                      children: const [
+                    const Row(
+                      children: [
                         Expanded(
                           child: Divider(color: Colors.white54, thickness: 1),
                         ),
@@ -242,36 +234,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     OutlinedButton.icon(
                       onPressed: (authViewModel.isLoading || _isProcessingGoogle)
                           ? null
-                          : () async {
-                        setState(() => _isProcessingGoogle = true);
-                        try {
-                          // Iniciar el flujo de autenticación directamente aquí
-                          final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-                          if (googleUser == null) {
-                            setState(() => _isProcessingGoogle = false);
-                            return; // Usuario canceló
-                          }
-
-                          // Obtener los tokens
-                          final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-
-                          // Llamar al ViewModel para completar la autenticación
-                          final success = await authViewModel.signInWithGoogleCredential(
-                            accessToken: googleAuth.accessToken,
-                            idToken: googleAuth.idToken,
-                          );
-
-                          if (success && mounted) {
-                            Navigator.of(context).pop();
-                          }
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text("Error: ${e.toString()}")),
-                          );
-                        } finally {
-                          if (mounted) setState(() => _isProcessingGoogle = false);
-                        }
-                      },
+                          : () => _handleGoogleLogin(context),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white,
                         side: const BorderSide(color: Colors.white),
@@ -337,7 +300,54 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _forgotPassword(BuildContext context, AuthViewModel authViewModel) {
+  // Método para manejar el inicio de sesión con email y contraseña
+  void _handleEmailPasswordLogin(BuildContext context) async {
+    final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+
+    final success = await authViewModel.signInWithEmailAndPassword(
+      _emailController.text.trim(),
+      _passwordController.text,
+    );
+
+    if (success && mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const InicioScreen()), // Tu pantalla principal
+      );
+    }
+  }
+
+  // Método para manejar el inicio de sesión con Google
+  void _handleGoogleLogin(BuildContext context) async {
+    try {
+      setState(() => _isProcessingGoogle = true);
+      final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+      final success = await authViewModel.signInWithGoogle();
+
+      if (success && mounted) {
+        // Esperar 1 segundo para sincronización completa
+        await Future.delayed(const Duration(seconds: 1));
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const InicioScreen()),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Error: ${e.toString()}"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isProcessingGoogle = false);
+    }
+  }
+
+  // Método para mostrar el diálogo de olvidar contraseña
+  void _showForgotPasswordDialog(BuildContext context) {
     final formKey = GlobalKey<FormState>();
     final emailController = TextEditingController();
 
@@ -374,33 +384,41 @@ class _LoginScreenState extends State<LoginScreen> {
               child: const Text('Cancelar'),
             ),
             ElevatedButton(
-              onPressed: () async {
-                if (formKey.currentState!.validate()) {
-                  final success = await authViewModel.resetPassword(
-                    emailController.text.trim(),
-                  );
-
-                  if (context.mounted) {
-                    Navigator.of(context).pop();
-
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          success
-                              ? 'Se ha enviado un correo para restablecer su contraseña'
-                              : authViewModel.errorMessage ?? 'Error al enviar el correo',
-                        ),
-                        backgroundColor: success ? Colors.green : Colors.red,
-                      ),
-                    );
-                  }
-                }
-              },
+              onPressed: () => _handleForgotPassword(context, formKey, emailController),
               child: const Text('Enviar'),
             ),
           ],
         );
       },
     );
+  }
+
+  // Método para manejar el proceso de olvidar contraseña
+  void _handleForgotPassword(
+      BuildContext context,
+      GlobalKey<FormState> formKey,
+      TextEditingController emailController) async {
+    if (formKey.currentState!.validate()) {
+      final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
+
+      final success = await authViewModel.resetPassword(
+        emailController.text.trim(),
+      );
+
+      if (context.mounted) {
+        Navigator.of(context).pop();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              success
+                  ? 'Se ha enviado un correo para restablecer su contraseña'
+                  : authViewModel.errorMessage ?? 'Error al enviar el correo',
+            ),
+            backgroundColor: success ? Colors.green : Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
