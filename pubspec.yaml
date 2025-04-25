@@ -20,7 +20,7 @@ dependencies:
   provider: ^6.0.5
 
   # Autenticación con Google - versión específica que evita problemas
-  google_sign_in: ^6.1.4
+  google_sign_in: ^6.1.6
 
   # UI
   cupertino_icons: ^1.0.5

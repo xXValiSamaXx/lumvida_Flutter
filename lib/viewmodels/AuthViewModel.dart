@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AuthViewModel extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   User? _user;
@@ -46,19 +48,37 @@ class AuthViewModel extends ChangeNotifier {
   }
 
   // Registrar nuevo usuario
-  Future<bool> registerWithEmailAndPassword(String email, String password) async {
+  Future<bool> registerWithEmailAndPassword(String email, String password, String name, String phone) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      await _auth.createUserWithEmailAndPassword(
+      final userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
-      _isLoading = false;
-      notifyListeners();
-      return true;
+
+      if (userCredential.user != null) {
+        // Crear el perfil de usuario en Firestore
+        await _firestore.collection("usuarios").doc(userCredential.user!.uid).set({
+          "uid": userCredential.user!.uid,
+          "email": email,
+          "nombre": name,
+          "telefono": phone,
+          "provider": "EMAIL",
+          "createdAt": Timestamp.now().millisecondsSinceEpoch
+        });
+
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      } else {
+        _isLoading = false;
+        _errorMessage = "No se pudo crear el usuario";
+        notifyListeners();
+        return false;
+      }
     } on FirebaseAuthException catch (e) {
       _isLoading = false;
       _errorMessage = _getMessageFromErrorCode(e.code);
@@ -74,28 +94,118 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Iniciar el flujo de autenticación
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
+      // Verificar si el usuario canceló
       if (googleUser == null) {
-        // El usuario canceló el inicio de sesión con Google
         _isLoading = false;
         notifyListeners();
         return false;
       }
 
+      // Obtener detalles de autenticación
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      // Crear credencial para Firebase
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      await _auth.signInWithCredential(credential);
+      // Iniciar sesión con la credencial
+      final userCredential = await _auth.signInWithCredential(credential);
+
+      // Verificar si el usuario existe en Firestore
+      final userDoc = await _firestore.collection("usuarios").doc(userCredential.user!.uid).get();
+
+      if (!userDoc.exists) {
+        // Crear el perfil si no existe
+        await _firestore.collection("usuarios").doc(userCredential.user!.uid).set({
+          "uid": userCredential.user!.uid,
+          "email": userCredential.user!.email,
+          "nombre": userCredential.user!.displayName ?? "Usuario",
+          "telefono": "",
+          "provider": "GOOGLE",
+          "createdAt": Timestamp.now().millisecondsSinceEpoch
+        });
+      }
+
       _isLoading = false;
       notifyListeners();
       return true;
     } catch (e) {
       _isLoading = false;
-      _errorMessage = "Error al iniciar sesión con Google";
+      _errorMessage = "Error al iniciar sesión con Google: ${e.toString()}";
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Método para manejar credenciales de Google después de obtenerlas
+  Future<bool> signInWithGoogleCredential({required String? accessToken, required String? idToken}) async {
+    if (accessToken == null || idToken == null) {
+      _errorMessage = "No se pudieron obtener las credenciales de Google";
+      notifyListeners();
+      return false;
+    }
+
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      // Crear credencial
+      final credential = GoogleAuthProvider.credential(
+        accessToken: accessToken,
+        idToken: idToken,
+      );
+
+      // Iniciar sesión con la credencial
+      final userCredential = await _auth.signInWithCredential(credential);
+
+      // Verificar si el usuario existe en Firestore
+      final userDoc = await _firestore.collection("usuarios").doc(userCredential.user!.uid).get();
+
+      if (!userDoc.exists) {
+        // Crear el perfil si no existe
+        await _firestore.collection("usuarios").doc(userCredential.user!.uid).set({
+          "uid": userCredential.user!.uid,
+          "email": userCredential.user!.email,
+          "nombre": userCredential.user!.displayName ?? "Usuario",
+          "telefono": "",
+          "provider": "GOOGLE",
+          "createdAt": Timestamp.now().millisecondsSinceEpoch
+        });
+      }
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = "Error al iniciar sesión con Google: ${e.toString()}";
+      notifyListeners();
+      return false;
+    }
+  }
+
+  // Actualizar el teléfono del usuario
+  Future<bool> updateUserPhone(User user, String phone) async {
+    try {
+      _isLoading = true;
+      notifyListeners();
+
+      await _firestore.collection("usuarios").doc(user.uid).update({
+        "telefono": phone
+      });
+
+      _isLoading = false;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _isLoading = false;
+      _errorMessage = "Error al actualizar el teléfono: ${e.toString()}";
       notifyListeners();
       return false;
     }

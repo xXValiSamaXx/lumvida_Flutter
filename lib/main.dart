@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
-import 'services/firebase_options.dart'; // Importación correcta desde la raíz
-import 'viewmodels/AuthViewModel.dart'; // Asegúrate de que este archivo exista con este nombre
-import 'screens/InicioScreen.dart'; // Asegúrate de que este archivo exista con este nombre
+import 'firebase_options.dart';
+import 'viewmodels/AuthViewModel.dart';
+import 'screens/InicioScreen.dart';
+import 'screens/LoginScreen.dart';
+import 'screens/RegisterScreen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,11 +29,15 @@ class MyApp extends StatelessWidget {
         title: 'LumVida',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          primarySwatch: Colors.deepPurple, // Usando morado como vimos en las capturas
+          primarySwatch: Colors.deepPurple,
           visualDensity: VisualDensity.adaptivePlatformDensity,
           fontFamily: 'Roboto',
         ),
         home: const InicioScreen(),
+        routes: {
+          '/register': (context) => const RegisterScreen(),
+          '/login': (context) => const LoginScreen(),
+        },
       ),
     );
   }

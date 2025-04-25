@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/gestures.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../viewmodels/AuthViewModel.dart';
 import 'RegisterScreen.dart';
 
@@ -16,6 +17,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isProcessingGoogle = false;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   @override
   void dispose() {
@@ -149,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       alignment: Alignment.centerRight,
                       child: TextButton(
                         onPressed: () {
-                          _showForgotPasswordDialog(context);
+                          _forgotPassword(context, authViewModel);
                         },
                         child: const Text(
                           '¿Olvidaste tu contraseña?',
@@ -187,7 +190,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             _passwordController.text,
                           );
 
-                          if (success && context.mounted) {
+                          if (success && mounted) {
                             Navigator.of(context).pop();
                           }
                         }
@@ -237,13 +240,36 @@ class _LoginScreenState extends State<LoginScreen> {
 
                     // Botón de Google
                     OutlinedButton.icon(
-                      onPressed: authViewModel.isLoading
+                      onPressed: (authViewModel.isLoading || _isProcessingGoogle)
                           ? null
                           : () async {
-                        final success = await authViewModel.signInWithGoogle();
+                        setState(() => _isProcessingGoogle = true);
+                        try {
+                          // Iniciar el flujo de autenticación directamente aquí
+                          final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+                          if (googleUser == null) {
+                            setState(() => _isProcessingGoogle = false);
+                            return; // Usuario canceló
+                          }
 
-                        if (success && context.mounted) {
-                          Navigator.of(context).pop();
+                          // Obtener los tokens
+                          final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+                          // Llamar al ViewModel para completar la autenticación
+                          final success = await authViewModel.signInWithGoogleCredential(
+                            accessToken: googleAuth.accessToken,
+                            idToken: googleAuth.idToken,
+                          );
+
+                          if (success && mounted) {
+                            Navigator.of(context).pop();
+                          }
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text("Error: ${e.toString()}")),
+                          );
+                        } finally {
+                          if (mounted) setState(() => _isProcessingGoogle = false);
                         }
                       },
                       style: OutlinedButton.styleFrom(
@@ -254,7 +280,16 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(30),
                         ),
                       ),
-                      icon: Image.network(
+                      icon: _isProcessingGoogle
+                          ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                          : Image.network(
                         'https://cdn-icons-png.flaticon.com/512/2991/2991148.png',
                         width: 24,
                         height: 24,
@@ -302,10 +337,9 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void _showForgotPasswordDialog(BuildContext context) {
+  void _forgotPassword(BuildContext context, AuthViewModel authViewModel) {
     final formKey = GlobalKey<FormState>();
     final emailController = TextEditingController();
-    final authViewModel = Provider.of<AuthViewModel>(context, listen: false);
 
     showDialog(
       context: context,
