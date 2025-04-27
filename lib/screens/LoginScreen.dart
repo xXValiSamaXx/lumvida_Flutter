@@ -46,14 +46,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Logo
-                    Center(
-                      child: Text(
-                        "LumVida",
-                        style: TextStyle(
-                          fontSize: 40,
-                          fontWeight: FontWeight.bold,
-                          color: kPrimaryColor,
-                        ),
+                    Align(
+                      alignment: Alignment.center,
+                      child: Image.asset(
+                        'assets/images/Logo blanco.png',
+                        height: 120,
                       ),
                     ),
                     const SizedBox(height: 30),
@@ -92,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         if (value == null || value.isEmpty) {
                           return 'Por favor ingrese su correo electrónico';
                         }
-                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                        if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
                           return 'Ingrese un correo electrónico válido';
                         }
                         return null;
@@ -358,7 +355,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 if (value == null || value.isEmpty) {
                   return 'Por favor ingrese su correo electrónico';
                 }
-                if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
                   return 'Ingrese un correo electrónico válido';
                 }
                 return null;

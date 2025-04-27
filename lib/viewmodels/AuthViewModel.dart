@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -13,22 +13,48 @@ class AuthViewModel extends ChangeNotifier {
   User? _user;
   bool _isLoading = false;
   String? _errorMessage;
+  String? _nombreUsuario;
 
   bool get isAuthenticated => _user != null;
   User? get user => _user;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  String? get nombreUsuario => _nombreUsuario;
 
   AuthViewModel() {
     // Escuchar cambios de autenticación
     _auth.authStateChanges().listen((User? user) {
       _user = user;
+      // Actualizar el nombre de usuario si el usuario está autenticado
+      if (user != null) {
+        _cargarDatosUsuario(user.uid);
+      } else {
+        _nombreUsuario = null;
+      }
       notifyListeners();
     });
   }
 
+  Future<void> _cargarDatosUsuario(String uid) async {
+    try {
+      final doc = await _firestore.collection('usuarios').doc(uid).get();
+      if (doc.exists && doc.data() != null) {
+        final datos = doc.data()!;
+        _nombreUsuario = datos['nombre'];
+        notifyListeners();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        print('Error al cargar datos del usuario: $e');
+      }
+    }
+  }
+
   Future<void> checkAuthState() async {
     _user = _auth.currentUser;
+    if (_user != null) {
+      await _cargarDatosUsuario(_user!.uid);
+    }
     notifyListeners();
   }
 
@@ -39,10 +65,15 @@ class AuthViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _auth.signInWithEmailAndPassword(
+      final userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+
+      if (userCredential.user != null) {
+        await _cargarDatosUsuario(userCredential.user!.uid);
+      }
+
       _isLoading = false;
       notifyListeners();
       return true;
@@ -77,6 +108,7 @@ class AuthViewModel extends ChangeNotifier {
           "createdAt": Timestamp.now().millisecondsSinceEpoch
         });
 
+        _nombreUsuario = name;
         _isLoading = false;
         notifyListeners();
         return true;
@@ -94,7 +126,7 @@ class AuthViewModel extends ChangeNotifier {
     }
   }
 
-// Método autenticación con Google
+  // Método autenticación con Google
   Future<bool> signInWithGoogle() async {
     _isLoading = true;
     _errorMessage = null;
@@ -105,6 +137,7 @@ class AuthViewModel extends ChangeNotifier {
 
       if (user != null) {
         _user = user;
+        await _cargarDatosUsuario(user.uid);
         _isLoading = false;
         notifyListeners();
         return true;
@@ -115,7 +148,9 @@ class AuthViewModel extends ChangeNotifier {
         return false;
       }
     } catch (e) {
-      print("Error en signInWithGoogle: $e");
+      if (kDebugMode) {
+        print("Error en signInWithGoogle: $e");
+      }
       _isLoading = false;
       _errorMessage = "Error técnico al iniciar sesión: ${e.toString()}";
       notifyListeners();
@@ -158,6 +193,7 @@ class AuthViewModel extends ChangeNotifier {
 
       await _googleSignIn.signOut();
       await _auth.signOut();
+      _nombreUsuario = null;
 
       _isLoading = false;
       notifyListeners();

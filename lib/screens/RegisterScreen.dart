@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:flutter/gestures.dart';
 import '../utils/constants.dart';
 import '../viewmodels/AuthViewModel.dart';
-import 'LoginScreen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({Key? key}) : super(key: key);
@@ -61,7 +60,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Logo o título
-                    Center(
+                    const Center(
                       child: Text(
                         "LumVida",
                         style: TextStyle(
@@ -130,7 +129,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         if (value == null || value.isEmpty) {
                           return 'Por favor ingrese su correo electrónico';
                         }
-                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                        if (!RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
                           return 'Ingrese un correo electrónico válido';
                         }
                         return null;
@@ -166,7 +165,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         if (value.length > 10) {
                           _phoneController.text = value.substring(0, 10);
                           _phoneController.selection = TextSelection.fromPosition(
-                              TextPosition(offset: 10)
+                              const TextPosition(offset: 10)
                           );
                         }
                       },

@@ -1,19 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../utils/constants.dart';
+import '../utils/report_categories.dart';
 import '../viewmodels/AuthViewModel.dart';
 import 'LoginScreen.dart';
 
-class ReportesScreen extends StatelessWidget {
-  const ReportesScreen({Key? key}) : super(key: key);
+class ReportesScreen extends StatefulWidget {
+  final String categoria;
+
+  const ReportesScreen({Key? key, required this.categoria}) : super(key: key);
+
+  @override
+  State<ReportesScreen> createState() => _ReportesScreenState();
+}
+
+class _ReportesScreenState extends State<ReportesScreen> {
+  String? _selectedOption;
+  final TextEditingController _commentController = TextEditingController();
+
+  @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final authViewModel = Provider.of<AuthViewModel>(context);
+    final category = ReportCategories.getCategoryByName(widget.categoria);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reportar un problema', style: TextStyle(color: kPrimaryColor)),
+        title: Text('Reportar ${category.name}', style: const TextStyle(color: kPrimaryColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: kPrimaryColor),
@@ -29,7 +47,7 @@ class ReportesScreen extends StatelessWidget {
                 // Icono del tipo de problema
                 Center(
                   child: Icon(
-                    Icons.car_repair,
+                    category.icon,
                     color: kPrimaryColor,
                     size: 60,
                   ),
@@ -38,8 +56,8 @@ class ReportesScreen extends StatelessWidget {
                 const SizedBox(height: 20),
 
                 // Título principal
-                const Text(
-                  'Reportar un problema',
+                Text(
+                  'Reportar ${category.name}',
                   style: kTitleStyle,
                 ),
 
@@ -75,7 +93,7 @@ class ReportesScreen extends StatelessWidget {
 
                 // Descripción
                 const Text(
-                  'DESCRIBE EL REPORTE (EL FILTRO QUE HABIAMOS HABLADO)',
+                  'DESCRIBE EL PROBLEMA:',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -86,9 +104,32 @@ class ReportesScreen extends StatelessWidget {
                 const SizedBox(height: 10),
 
                 // Opciones de reporte
-                _buildCheckOption('No recogieron toda la basura'),
-                _buildCheckOption('El personal fue irrespetuoso'),
-                _buildCheckOption('Cambiaron el horario sin avisar'),
+                ...category.options.map((option) => _buildCheckOption(
+                  option.description,
+                  option.description == _selectedOption,
+                      () {
+                    setState(() {
+                      _selectedOption = option.description;
+                    });
+                  },
+                )).toList(),
+
+                // Campo para comentarios adicionales
+                if (_selectedOption == 'Otro (especificar)') ...[
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: _commentController,
+                    decoration: InputDecoration(
+                      hintText: 'Describe el problema...',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                    maxLines: 3,
+                  ),
+                ],
 
                 const SizedBox(height: 30),
 
@@ -120,6 +161,16 @@ class ReportesScreen extends StatelessWidget {
                 // Botón de enviar
                 ElevatedButton(
                   onPressed: () {
+                    if (_selectedOption == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Por favor selecciona una opción'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                      return;
+                    }
+
                     if (authViewModel.isAuthenticated) {
                       // Mostrar mensaje de éxito
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -147,13 +198,9 @@ class ReportesScreen extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: Container(
-        height: 70,
-        decoration: BoxDecoration(
+        height: 50,
+        decoration: const BoxDecoration(
           color: kSecondaryColor,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(30),
-            topRight: Radius.circular(30),
-          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -203,20 +250,36 @@ class ReportesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildCheckOption(String text) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
-      decoration: const BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.black12, width: 1),
+  Widget _buildCheckOption(String text, bool isSelected, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
+        decoration: const BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: Colors.black12, width: 1),
+          ),
         ),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 16,
-          color: Colors.black87,
+        child: Row(
+          children: [
+            Icon(
+              isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+              color: isSelected ? kPrimaryColor : Colors.grey,
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.black87,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -224,18 +287,21 @@ class ReportesScreen extends StatelessWidget {
 
   Widget _buildPhotoContainer() {
     return Expanded(
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.grey.shade200,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: const Center(
-            child: Text(
-              '100\n×\n100',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+      child: InkWell(
+        onTap: () {
+          // Implementar selección de foto
+        },
+        child: AspectRatio(
+          aspectRatio: 1,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.add_a_photo,
+              color: Colors.grey,
+              size: 30,
             ),
           ),
         ),

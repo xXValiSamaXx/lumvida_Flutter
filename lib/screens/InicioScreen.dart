@@ -12,142 +12,126 @@ class InicioScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authViewModel = Provider.of<AuthViewModel>(context);
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       body: Container(
         decoration: backgroundDecoration,
         child: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // Logo
-                  Image.asset(
-                    'assets/images/Logo blanco.png',
-                    height: 200,
-                  ),
-                  const SizedBox(height: 40),
-
-                  // Título de la app
-                  const Text(
-                    'LumVida',
-                    style: kTitleStyle,
-                  ),
-                  const SizedBox(height: 10),
-
-                  // Sección de bienvenida
-                  Text(
-                    authViewModel.isAuthenticated
-                        ? 'Bienvenido ${authViewModel.user?.email?.split('@').first ?? 'Usuario'}'
-                        : 'Bienvenido Invitado',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-
-                  // Reporte ciudadano
-                  const Align(
-                    alignment: Alignment.centerLeft,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Título de bienvenida (opcional)
+                if (authViewModel.isAuthenticated)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 30.0),
                     child: Text(
-                      'Reporte ciudadano:',
-                      style: kTitleStyle,
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  // Historial de reportes
-                  InkWell(
-                    onTap: () {
-                      if (authViewModel.isAuthenticated) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const MisReportesScreen(),
-                          ),
-                        );
-                      } else {
-                        _mostrarDialogoInicioSesionRequerido(context);
-                      }
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        color: kPrimaryColor,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'Historial de reportes',
-                          style: TextStyle(
-                            fontSize: 20,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  // Realizar un reporte
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Realizar un reporte\nrelacionado con:',
-                      style: TextStyle(
-                        fontSize: 24,
+                      'Bienvenido ${authViewModel.user?.displayName ?? authViewModel.nombreUsuario ?? 'Usuario'}',
+                      style: const TextStyle(
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: kPrimaryColor,
+                        color: Colors.black87,
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 20),
+                // Reporte ciudadano
+                const Text(
+                  'Reporte ciudadano:',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: kPrimaryColor,
+                  ),
+                ),
 
-                  // Grid de categorías
-                  Expanded(
-                    child: GridView.count(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                      children: [
-                        _buildCategoryButton(
-                          context: context,
-                          icon: Icons.directions_car,
-                          title: 'Baches',
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportesScreen())),
+                const SizedBox(height: 12),
+
+                // Historial de reportes (botón rojo)
+                InkWell(
+                  onTap: () {
+                    if (authViewModel.isAuthenticated) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const MisReportesScreen(),
                         ),
-                        _buildCategoryButton(
-                          context: context,
-                          icon: Icons.lightbulb_outline,
-                          title: 'Alumbrado\nPublico',
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportesScreen())),
+                      );
+                    } else {
+                      _mostrarDialogoInicioSesionRequerido(context);
+                    }
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      color: kPrimaryColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'Historial de reportes',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
                         ),
-                        _buildCategoryButton(
-                          context: context,
-                          icon: Icons.delete_outline,
-                          title: 'Basura\nacumulada',
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportesScreen())),
-                        ),
-                        _buildCategoryButton(
-                          context: context,
-                          icon: Icons.water_drop,
-                          title: 'Alcantarillado',
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportesScreen())),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ],
-              ),
+                ),
+
+                const SizedBox(height: 30),
+
+                // Realizar un reporte
+                const Text(
+                  'Realizar un reporte\nrelacionado con:',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: kPrimaryColor,
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // Grid de categorías 2x2
+                Expanded(
+                  child: GridView.count(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    children: [
+                      _buildCategoryButton(
+                        context: context,
+                        icon: Icons.car_repair,
+                        title: 'Baches',
+                        categoria: 'Baches',
+                      ),
+                      _buildCategoryButton(
+                        context: context,
+                        icon: Icons.lightbulb_outline,
+                        title: 'Alumbrado\nPúblico',
+                        categoria: 'Alumbrado Público',
+                      ),
+                      _buildCategoryButton(
+                        context: context,
+                        icon: Icons.delete_outline,
+                        title: 'Basura\nacumulada',
+                        categoria: 'Basura acumulada',
+                      ),
+                      _buildCategoryButton(
+                        context: context,
+                        icon: Icons.water_drop,
+                        title: 'Alcantarillado',
+                        categoria: 'Alcantarillado',
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -160,14 +144,19 @@ class InicioScreen extends StatelessWidget {
     required BuildContext context,
     required IconData icon,
     required String title,
-    required VoidCallback onTap,
+    required String categoria,
   }) {
     return InkWell(
-      onTap: onTap,
+      onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ReportesScreen(categoria: categoria),
+          )
+      ),
       child: Container(
         decoration: BoxDecoration(
           color: kPrimaryColor,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -175,7 +164,7 @@ class InicioScreen extends StatelessWidget {
             Icon(
               icon,
               color: Colors.white,
-              size: 40,
+              size: 36,
             ),
             const SizedBox(height: 10),
             Text(
@@ -195,44 +184,48 @@ class InicioScreen extends StatelessWidget {
 
   Widget _buildBottomNavigationBar(BuildContext context, AuthViewModel authViewModel) {
     return Container(
-      height: 70,
-      decoration: BoxDecoration(
+      height: 60,
+      decoration: const BoxDecoration(
         color: kSecondaryColor,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(30),
-          topRight: Radius.circular(30),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
         ),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          const Expanded(
+          // Dashboard
+          Expanded(
             child: Center(
-              child: Text(
+              child: const Text(
                 'Dashboard',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
           ),
+
+          // Separador vertical
           Container(
             width: 1,
             height: 30,
             color: Colors.white.withOpacity(0.3),
           ),
+
+          // Iconos de ubicación y perfil
           Expanded(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.location_on, color: Colors.white, size: 28),
+                  icon: const Icon(Icons.location_on, color: Colors.white, size: 24),
                   onPressed: () {},
                 ),
                 IconButton(
-                  icon: const Icon(Icons.person, color: Colors.white, size: 28),
+                  icon: const Icon(Icons.person, color: Colors.white, size: 24),
                   onPressed: () {
                     if (authViewModel.isAuthenticated) {
                       _mostrarDialogoCerrarSesion(context);
