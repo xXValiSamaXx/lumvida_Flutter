@@ -1,8 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_osm_plugin/flutter_osm_plugin.dart' as osm;
+import 'package:image_picker/image_picker.dart';
+import '../components/OSMMapComponent.dart';
 import '../utils/constants.dart';
 import '../utils/report_categories.dart';
 import '../viewmodels/AuthViewModel.dart';
+import '../services/ReporteService.dart';
 import 'LoginScreen.dart';
 
 class ReportesScreen extends StatefulWidget {
@@ -17,11 +22,143 @@ class ReportesScreen extends StatefulWidget {
 class _ReportesScreenState extends State<ReportesScreen> {
   String? _selectedOption;
   final TextEditingController _commentController = TextEditingController();
+  osm.GeoPoint? _selectedLocation;
+  String _addressText = "Selecciona una ubicación en el mapa";
+  final ReporteService _reporteService = ReporteService();
+  bool _isSubmitting = false;
+
+  // Lista de fotos
+  final List<File> _selectedPhotos = [];
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void dispose() {
     _commentController.dispose();
     super.dispose();
+  }
+
+  // Función para seleccionar fotos
+  Future<void> _pickImage(int index) async {
+    try {
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 70,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          // Si el índice ya existe, reemplazamos la imagen
+          if (index < _selectedPhotos.length) {
+            _selectedPhotos[index] = File(pickedFile.path);
+          } else {
+            // Si no, la añadimos
+            _selectedPhotos.add(File(pickedFile.path));
+          }
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error al seleccionar imagen: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Función para enviar el reporte
+  Future<void> _submitReport(BuildContext context, AuthViewModel authViewModel) async {
+    if (_selectedOption == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor selecciona una opción'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (_selectedLocation == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor selecciona una ubicación en el mapa'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Si no está autenticado, mostrar diálogo
+    if (!authViewModel.isAuthenticated) {
+      _mostrarDialogoInicioSesionRequerido(context);
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    try {
+      // Obtener dirección a partir de coordenadas
+      String direccion = await _reporteService.obtenerDireccion(_selectedLocation!);
+
+      // Preparar descripción
+      String descripcion = _selectedOption == 'Otro (especificar)'
+          ? _commentController.text.trim()
+          : _selectedOption!;
+
+      if (descripcion.isEmpty) {
+        descripcion = 'Sin descripción';
+      }
+
+      // Enviar reporte
+      final reporteId = await _reporteService.crearReporte(
+        userId: authViewModel.user?.uid ?? 'anonymous',
+        categoria: widget.categoria,
+        descripcion: descripcion,
+        direccion: direccion,
+        ubicacion: _selectedLocation!,
+        nombreCompleto: authViewModel.nombreUsuario ?? 'Anónimo',
+        telefono: authViewModel.telefono ?? '',
+        isAnonymous: !authViewModel.isAuthenticated,
+        imagenes: _selectedPhotos,
+      );
+
+      if (reporteId != null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Reporte enviado con éxito'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          // Volver a la pantalla anterior
+          Navigator.pop(context);
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Error al enviar el reporte'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      setState(() {
+        _isSubmitting = false;
+      });
+    }
   }
 
   @override
@@ -39,161 +176,172 @@ class _ReportesScreenState extends State<ReportesScreen> {
       body: Container(
         decoration: backgroundDecoration,
         child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Icono del tipo de problema
-                Center(
-                  child: Icon(
-                    category.icon,
-                    color: kPrimaryColor,
-                    size: 60,
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Título principal
-                Text(
-                  'Reportar ${category.name}',
-                  style: kTitleStyle,
-                ),
-
-                const SizedBox(height: 30),
-
-                // Ubicación
-                const Text(
-                  '¿DÓNDE SE UBICA EL PROBLEMA?',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: kPrimaryColor,
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                // Mapa (simulado)
-                Container(
-                  height: 200,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.grey.shade300),
-                  ),
-                  child: const Center(
-                    child: Text('Mapa aquí', style: TextStyle(color: Colors.grey)),
-                  ),
-                ),
-
-                const SizedBox(height: 30),
-
-                // Descripción
-                const Text(
-                  'DESCRIBE EL PROBLEMA:',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: kPrimaryColor,
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                // Opciones de reporte
-                ...category.options.map((option) => _buildCheckOption(
-                  option.description,
-                  option.description == _selectedOption,
-                      () {
-                    setState(() {
-                      _selectedOption = option.description;
-                    });
-                  },
-                )).toList(),
-
-                // Campo para comentarios adicionales
-                if (_selectedOption == 'Otro (especificar)') ...[
-                  const SizedBox(height: 20),
-                  TextField(
-                    controller: _commentController,
-                    decoration: InputDecoration(
-                      hintText: 'Describe el problema...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      filled: true,
-                      fillColor: Colors.white,
-                    ),
-                    maxLines: 3,
-                  ),
-                ],
-
-                const SizedBox(height: 30),
-
-                // Sección de fotos
-                const Text(
-                  'ADJUNTA FOTOS',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: kPrimaryColor,
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-
-                // Contenedores para fotos
-                Row(
+          child: Stack(
+            children: [
+              SingleChildScrollView(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildPhotoContainer(),
-                    const SizedBox(width: 10),
-                    _buildPhotoContainer(),
-                    const SizedBox(width: 10),
-                    _buildPhotoContainer(),
+                    // Icono del tipo de problema
+                    Center(
+                      child: Icon(
+                        category.icon,
+                        color: kPrimaryColor,
+                        size: 60,
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Título principal
+                    Text(
+                      'Reportar ${category.name}',
+                      style: kTitleStyle,
+                    ),
+
+                    const SizedBox(height: 30),
+
+                    // Ubicación
+                    const Text(
+                      '¿DÓNDE SE UBICA EL PROBLEMA?',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: kPrimaryColor,
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // OSM Map Component
+                    OSMMapComponent(
+                      height: 250,
+                      trackMyLocation: true,
+                      allowPicking: true,
+                      onLocationSelected: (osm.GeoPoint location) {
+                        setState(() {
+                          _selectedLocation = location;
+                          _addressText = 'Lat: ${location.latitude.toStringAsFixed(6)}, Lon: ${location.longitude.toStringAsFixed(6)}';
+                        });
+                      },
+                    ),
+
+                    if (_selectedLocation != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          'Ubicación: $_addressText',
+                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ),
+
+                    const SizedBox(height: 30),
+
+                    // Descripción
+                    const Text(
+                      'DESCRIBE EL PROBLEMA:',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: kPrimaryColor,
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // Opciones de reporte
+                    ...category.options.map((option) => _buildCheckOption(
+                      option.description,
+                      option.description == _selectedOption,
+                          () {
+                        setState(() {
+                          _selectedOption = option.description;
+                        });
+                      },
+                    )).toList(),
+
+                    // Campo para comentarios adicionales
+                    if (_selectedOption == 'Otro (especificar)') ...[
+                      const SizedBox(height: 20),
+                      TextField(
+                        controller: _commentController,
+                        decoration: InputDecoration(
+                          hintText: 'Describe el problema...',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                        ),
+                        maxLines: 3,
+                      ),
+                    ],
+
+                    const SizedBox(height: 30),
+
+                    // Sección de fotos
+                    const Text(
+                      'ADJUNTA FOTOS',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: kPrimaryColor,
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Contenedores para fotos
+                    Row(
+                      children: [
+                        _buildPhotoContainer(0),
+                        const SizedBox(width: 10),
+                        _buildPhotoContainer(1),
+                        const SizedBox(width: 10),
+                        _buildPhotoContainer(2),
+                      ],
+                    ),
+
+                    const SizedBox(height: 40),
+
+                    // Botón de enviar
+                    ElevatedButton(
+                      onPressed: _isSubmitting
+                          ? null
+                          : () => _submitReport(context, authViewModel),
+                      style: kPrimaryButtonStyle,
+                      child: _isSubmitting
+                          ? const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.0,
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          Text('Enviando...', style: kButtonTextStyle),
+                        ],
+                      )
+                          : const Text('Enviar Reporte', style: kButtonTextStyle),
+                    ),
                   ],
                 ),
+              ),
 
-                const SizedBox(height: 40),
-
-                // Botón de enviar
-                ElevatedButton(
-                  onPressed: () {
-                    if (_selectedOption == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Por favor selecciona una opción'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                      return;
-                    }
-
-                    if (authViewModel.isAuthenticated) {
-                      // Mostrar mensaje de éxito
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Reporte enviado con éxito'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                      // Volver a la pantalla anterior
-                      Navigator.pop(context);
-                    } else {
-                      // Si no está autenticado, mostrar diálogo
-                      _mostrarDialogoInicioSesionRequerido(context);
-                    }
-                  },
-                  style: kPrimaryButtonStyle,
-                  child: const Text(
-                    'Enviar Reporte',
-                    style: kButtonTextStyle,
+              // Overlay de carga
+              if (_isSubmitting)
+                Container(
+                  color: Colors.black.withOpacity(0.3),
+                  child: const Center(
+                    child: CircularProgressIndicator(color: kPrimaryColor),
                   ),
                 ),
-              ],
-            ),
+            ],
           ),
         ),
       ),
@@ -229,6 +377,7 @@ class _ReportesScreenState extends State<ReportesScreen> {
                   IconButton(
                     icon: const Icon(Icons.location_on, color: Colors.white, size: 28),
                     onPressed: () {},
+                    key: const ValueKey('location_icon'),
                   ),
                   IconButton(
                     icon: const Icon(Icons.person, color: Colors.white, size: 28),
@@ -240,6 +389,7 @@ class _ReportesScreenState extends State<ReportesScreen> {
                         );
                       }
                     },
+                    key: const ValueKey('user_icon'),
                   ),
                 ],
               ),
@@ -285,20 +435,54 @@ class _ReportesScreenState extends State<ReportesScreen> {
     );
   }
 
-  Widget _buildPhotoContainer() {
+  Widget _buildPhotoContainer(int index) {
+    // Verificar si ya hay una foto en este índice
+    final bool hasPhoto = index < _selectedPhotos.length;
+
     return Expanded(
       child: InkWell(
-        onTap: () {
-          // Implementar selección de foto
-        },
+        onTap: () => _pickImage(index),
         child: AspectRatio(
           aspectRatio: 1,
           child: Container(
             decoration: BoxDecoration(
               color: Colors.grey.shade200,
               borderRadius: BorderRadius.circular(10),
+              image: hasPhoto
+                  ? DecorationImage(
+                image: FileImage(_selectedPhotos[index]),
+                fit: BoxFit.cover,
+              )
+                  : null,
             ),
-            child: const Icon(
+            child: hasPhoto
+                ? Stack(
+              alignment: Alignment.topRight,
+              children: [
+                // Botón para eliminar la foto
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedPhotos.removeAt(index);
+                    });
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.all(5),
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                    child: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                ),
+              ],
+            )
+                : const Icon(
               Icons.add_a_photo,
               color: Colors.grey,
               size: 30,

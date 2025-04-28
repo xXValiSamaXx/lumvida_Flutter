@@ -2,6 +2,19 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+
+    <!-- Descripción de los permisos de ubicación -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Esta aplicación necesita acceso a tu ubicación para mostrar tu posición en el mapa y permitirte reportar problemas con precisión.</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>Esta aplicación necesita acceso a tu ubicación para mostrar tu posición en el mapa y permitirte reportar problemas con precisión.</string>
+
+    <!-- Descripción de los permisos de cámara y fotos -->
+    <key>NSCameraUsageDescription</key>
+    <string>Esta aplicación necesita acceso a la cámara para tomar fotos de los problemas que deseas reportar.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Esta aplicación necesita acceso a tu biblioteca de fotos para seleccionar imágenes de los problemas que deseas reportar.</string>
+
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

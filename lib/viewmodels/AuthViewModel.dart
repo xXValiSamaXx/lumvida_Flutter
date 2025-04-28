@@ -14,12 +14,14 @@ class AuthViewModel extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   String? _nombreUsuario;
+  String? _telefono;  // Añadimos la propiedad telefono
 
   bool get isAuthenticated => _user != null;
   User? get user => _user;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   String? get nombreUsuario => _nombreUsuario;
+  String? get telefono => _telefono;  // Añadimos el getter para telefono
 
   AuthViewModel() {
     // Escuchar cambios de autenticación
@@ -30,6 +32,7 @@ class AuthViewModel extends ChangeNotifier {
         _cargarDatosUsuario(user.uid);
       } else {
         _nombreUsuario = null;
+        _telefono = null;  // Limpiamos el teléfono cuando no hay usuario
       }
       notifyListeners();
     });
@@ -41,6 +44,7 @@ class AuthViewModel extends ChangeNotifier {
       if (doc.exists && doc.data() != null) {
         final datos = doc.data()!;
         _nombreUsuario = datos['nombre'];
+        _telefono = datos['telefono']; // Cargamos el teléfono
         notifyListeners();
       }
     } catch (e) {
@@ -109,6 +113,7 @@ class AuthViewModel extends ChangeNotifier {
         });
 
         _nombreUsuario = name;
+        _telefono = phone;  // Guardamos el teléfono
         _isLoading = false;
         notifyListeners();
         return true;
@@ -174,6 +179,7 @@ class AuthViewModel extends ChangeNotifier {
         "telefono": phone
       });
 
+      _telefono = phone;  // Actualizamos el teléfono localmente
       _isLoading = false;
       notifyListeners();
       return true;
@@ -194,6 +200,7 @@ class AuthViewModel extends ChangeNotifier {
       await _googleSignIn.signOut();
       await _auth.signOut();
       _nombreUsuario = null;
+      _telefono = null;  // Limpiamos el teléfono
 
       _isLoading = false;
       notifyListeners();

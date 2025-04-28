@@ -5,6 +5,7 @@ import '../viewmodels/AuthViewModel.dart';
 import 'LoginScreen.dart';
 import 'MisReportesScreen.dart';
 import 'ReportesScreen.dart';
+import 'MapScreen.dart'; // Importamos la pantalla del mapa
 
 class InicioScreen extends StatelessWidget {
   const InicioScreen({Key? key}) : super(key: key);
@@ -23,7 +24,7 @@ class InicioScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Título de bienvenida (opcional)
+                // Título de bienvenida
                 if (authViewModel.isAuthenticated)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 30.0),
@@ -136,7 +137,7 @@ class InicioScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: _buildBottomNavigationBar(context, authViewModel),
+      bottomNavigationBar: _buildBottomNavigationBar(context),
     );
   }
 
@@ -182,65 +183,73 @@ class InicioScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomNavigationBar(BuildContext context, AuthViewModel authViewModel) {
-    return Container(
-      height: 60,
-      decoration: const BoxDecoration(
-        color: kSecondaryColor,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
+  Widget _buildBottomNavigationBar(BuildContext context) {
+    return Consumer<AuthViewModel>(
+      builder: (context, authViewModel, _) => Container(
+        height: 60,
+        decoration: const BoxDecoration(
+          color: kSecondaryColor,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          // Dashboard
-          Expanded(
-            child: Center(
-              child: const Text(
-                'Dashboard',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+        child: Row(
+          children: [
+            // Dashboard
+            const Expanded(
+              child: Center(
+                child: Text(
+                  'Dashboard',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // Separador vertical
-          Container(
-            width: 1,
-            height: 30,
-            color: Colors.white.withOpacity(0.3),
-          ),
-
-          // Iconos de ubicación y perfil
-          Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.location_on, color: Colors.white, size: 24),
-                  onPressed: () {},
-                ),
-                IconButton(
-                  icon: const Icon(Icons.person, color: Colors.white, size: 24),
-                  onPressed: () {
-                    if (authViewModel.isAuthenticated) {
-                      _mostrarDialogoCerrarSesion(context);
-                    } else {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const LoginScreen()),
-                      );
-                    }
-                  },
-                ),
-              ],
+            // Separador vertical
+            Container(
+              width: 1,
+              height: 30,
+              color: Colors.white.withOpacity(0.3),
             ),
-          ),
-        ],
+
+            // Iconos de ubicación y perfil
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.location_on, color: Colors.white, size: 24),
+                    onPressed: () {
+                      // Navegación a la pantalla del mapa
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const MapScreen())
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.person, color: Colors.white, size: 24),
+                    onPressed: () {
+                      if (authViewModel.isAuthenticated) {
+                        _mostrarDialogoCerrarSesion(context);
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        );
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
