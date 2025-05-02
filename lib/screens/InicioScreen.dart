@@ -108,8 +108,8 @@ class InicioScreen extends StatelessWidget {
                       _buildCategoryButton(
                         context: context,
                         icon: Icons.car_repair,
-                        title: 'Baches',
-                        categoria: 'Baches',
+                        title: 'Bacheo',
+                        categoria: 'Bacheo',
                       ),
                       _buildCategoryButton(
                         context: context,
@@ -120,14 +120,14 @@ class InicioScreen extends StatelessWidget {
                       _buildCategoryButton(
                         context: context,
                         icon: Icons.delete_outline,
-                        title: 'Basura\nacumulada',
-                        categoria: 'Basura acumulada',
+                        title: 'Basura\nAcumulada',
+                        categoria: 'Basura Acumulada',
                       ),
                       _buildCategoryButton(
                         context: context,
                         icon: Icons.water_drop,
-                        title: 'Alcantarillado',
-                        categoria: 'Alcantarillado',
+                        title: 'Drenajes\nObstruidos',
+                        categoria: 'Drenajes Obstruidos',
                       ),
                     ],
                   ),

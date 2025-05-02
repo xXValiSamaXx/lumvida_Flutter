@@ -80,19 +80,16 @@ class _MapScreenState extends State<MapScreen> {
           }
 
           switch (categoria) {
-            case 'baches':
             case 'bacheo':
               markerIcon = const Icon(Icons.car_repair, color: Colors.red, size: 48);
               break;
             case 'alumbrado público':
-            case 'alumbrado':
               markerIcon = const Icon(Icons.lightbulb_outline, color: Colors.yellow, size: 48);
               break;
             case 'basura acumulada':
-            case 'basura':
               markerIcon = const Icon(Icons.delete_outline, color: Colors.orange, size: 48);
               break;
-            case 'alcantarillado':
+            case 'drenajes obstruidos':
               markerIcon = const Icon(Icons.water_drop, color: Colors.blue, size: 48);
               break;
             default:
@@ -181,13 +178,15 @@ class _MapScreenState extends State<MapScreen> {
       }
 
       // Verificar si la categoría coincide con el filtro
-      if (filtro == 'baches' && (categoriaOriginal.contains('bache') || categoriaOriginal.contains('bacheo'))) {
+      if (filtro == 'bacheo' && categoriaOriginal.contains('bacheo')) {
         return true;
       } else if (filtro == 'alumbrado' && categoriaOriginal.contains('alumbrado')) {
         return true;
       } else if (filtro == 'basura' && categoriaOriginal.contains('basura')) {
         return true;
-      } else if (filtro == 'alcantarillado' && categoriaOriginal.contains('alcantarillado')) {
+      } else if (filtro == 'drenajes' && (
+          categoriaOriginal.contains('drenajes') ||
+              categoriaOriginal.contains('obstruidos'))) {
         return true;
       }
 
@@ -233,8 +232,8 @@ class _MapScreenState extends State<MapScreen> {
                     _buildFilterChip('Todos', _selectedFilter == null || _selectedFilter == 'Todos', () {
                       _applyFilter('Todos');
                     }),
-                    _buildFilterChip('Baches', _selectedFilter == 'Baches', () {
-                      _applyFilter('Baches');
+                    _buildFilterChip('Bacheo', _selectedFilter == 'Bacheo', () {
+                      _applyFilter('Bacheo');
                     }),
                     _buildFilterChip('Alumbrado', _selectedFilter == 'Alumbrado', () {
                       _applyFilter('Alumbrado');
@@ -242,8 +241,8 @@ class _MapScreenState extends State<MapScreen> {
                     _buildFilterChip('Basura', _selectedFilter == 'Basura', () {
                       _applyFilter('Basura');
                     }),
-                    _buildFilterChip('Alcantarillado', _selectedFilter == 'Alcantarillado', () {
-                      _applyFilter('Alcantarillado');
+                    _buildFilterChip('Drenajes', _selectedFilter == 'Drenajes', () {
+                      _applyFilter('Drenajes');
                     }),
                   ],
                 ),

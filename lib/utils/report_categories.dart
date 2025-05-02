@@ -21,7 +21,7 @@ class ReportCategory {
 class ReportCategories {
   static const List<ReportCategory> categories = [
     ReportCategory(
-      name: 'Baches',
+      name: 'Bacheo',
       icon: Icons.car_repair,
       options: [
         ReportOption(description: 'Bache grande que dificulta el tránsito'),
@@ -43,7 +43,7 @@ class ReportCategories {
       ],
     ),
     ReportCategory(
-      name: 'Basura acumulada',
+      name: 'Basura Acumulada',
       icon: Icons.delete_outline,
       options: [
         ReportOption(description: 'Basurero desbordado'),
@@ -54,7 +54,7 @@ class ReportCategories {
       ],
     ),
     ReportCategory(
-      name: 'Alcantarillado',
+      name: 'Drenajes Obstruidos',
       icon: Icons.water_drop,
       options: [
         ReportOption(description: 'Alcantarilla tapada o bloqueada'),
